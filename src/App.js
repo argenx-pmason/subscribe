@@ -1,25 +1,530 @@
-import logo from './logo.svg';
-import './App.css';
+import "./App.css";
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Tooltip,
+  AppBar,
+  Autocomplete,
+  Button,
+  TextField,
+  Toolbar,
+  Snackbar,
+  IconButton,
+  Alert,
+  InputAdornment,
+  DialogActions,
+} from "@mui/material";
+// import { DataGridPro, GridToolbar } from "@mui/x-data-grid-pro";
+import { Info, AccountCircle, Remove, Add } from "@mui/icons-material";
+import { LicenseInfo } from "@mui/x-license";
+import local_email from "./email.json";
+import local_studies from "./studies_info.json";
+import local_user_list from "./folder_access_request.json";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+const App = () => {
+  LicenseInfo.setLicenseKey(
+    "6b1cacb920025860cc06bcaf75ee7a66Tz05NDY2MixFPTE3NTMyNTMxMDQwMDAsUz1wcm8sTE09c3Vic2NyaXB0aW9uLEtWPTI="
   );
-}
+  const title = "Subscribe for email notifications",
+    // innerHeight = window.innerHeight,
+    urlPrefix = window.location.protocol + "//" + window.location.host,
+    { href } = window.location,
+    mode = href.startsWith("http://localhost") ? "local" : "remote",
+    // server = href.split("//")[1].split("/")[0],
+    webDavPrefix = urlPrefix + "/lsaf/webdav/repo",
+    // fileViewerPrefix = `https://${server}/lsaf/filedownload/sdd:/general/biostat/tools/fileviewer/index.html?file=`,
+    usersUrl =
+      webDavPrefix +
+      "/general/biostat/metadata/projects/folder_access_request.json",
+    emailUrl = webDavPrefix + "/general/biostat/metadata/projects/email.json",
+    studiesUrl =
+      webDavPrefix + "/general/biostat/metadata/projects/studies_info.json",
+    [openInfo, setOpenInfo] = useState(false),
+    // [rows, setRows] = useState(null),
+    // [cols, setCols] = useState(null),
+    // [checked, setChecked] = React.useState([]),
+    [compounds, setCompounds] = useState(null),
+    [indications, setIndications] = useState(null),
+    [studies, setStudies] = useState(null),
+    [selectedCompounds, setSelectedCompounds] = useState([]),
+    [selectedIndications, setSelectedIndications] = useState([]),
+    [selectedStudies, setSelectedStudies] = useState([]),
+    [subscriptions, setSubscriptions] = useState([]),
+    [showSaveButton, setShowSaveButton] = useState(false),
+    [userList, setUserList] = useState(null),
+    [openUserLogin, setOpenUserLogin] = useState(false),
+    [tempUsername, setTempUsername] = useState(""),
+    [openSnackbar, setOpenSnackbar] = useState(false),
+    [reprocess, setReprocess] = useState(false),
+    [userFullName, setUserFullName] = useState(
+      localStorage.getItem("userFullName")
+    ),
+    [fontSize, setFontSize] = useState(
+      Number(localStorage.getItem("fontSize")) || 10
+    ),
+    [username, setUsername] = useState(localStorage.getItem("username")),
+    handleCloseSnackbar = (event, reason) => {
+      if (reason === "clickaway") {
+        return;
+      }
+      setOpenSnackbar(false);
+    },
+    saveUser = () => {
+      localStorage.setItem("username", tempUsername);
+      localStorage.setItem("userFullName", userFullName);
+      setUsername(tempUsername);
+      setReprocess((prev) => !prev);
+      setOpenUserLogin(false);
+    },
+    save = () => {
+      const mySubscriptions = [];
+      selectedCompounds.forEach((row) => {
+        mySubscriptions.push({
+          type: "compound",
+          value: row.value,
+          user: username,
+        });
+      });
+      selectedIndications.forEach((row) => {
+        mySubscriptions.push({
+          type: "indication",
+          value: row.value,
+          user: username,
+        });
+      });
+      selectedStudies.forEach((row) => {
+        mySubscriptions.push({
+          type: "study",
+          value: row.value,
+          user: username,
+        });
+      });
+      const updatedSubscriptions = subscriptions.filter(
+        (r) => r.user !== username
+      );
+      updatedSubscriptions.push(...mySubscriptions);
+      console.log(
+        "updatedSubscriptions",
+        updatedSubscriptions,
+        "mySubscriptions",
+        mySubscriptions
+      );
+      updateJsonFile(emailUrl, updatedSubscriptions);
+    },
+    processEmail = (email) => {
+      setSubscriptions(email);
+      const myRows = email.filter((row) => row.user === username),
+        myCompounds = myRows.filter((row) => row.type === "compound"),
+        myIndications = myRows.filter((row) => row.type === "indication"),
+        myStudies = myRows.filter((row) => row.type === "study");
+      setSelectedCompounds(
+        myCompounds.map((row) => {
+          return { label: row.value, value: row.value };
+        })
+      );
+      setSelectedIndications(
+        myIndications.map((row) => {
+          return { label: row.value, value: row.value };
+        })
+      );
+      setSelectedStudies(
+        myStudies.map((row) => {
+          return { label: row.value, value: row.value };
+        })
+      );
+    },
+    processStudies = (studies) => {
+      const uniqueCompounds = Array.from(
+        new Set(
+          studies.data.map((row) => {
+            return row.product;
+          })
+        )
+      ).sort((a, b) => a.localeCompare(b));
+      setCompounds(
+        uniqueCompounds.map((value) => ({ label: value, value: value }))
+      );
+      const uniqueIndications = Array.from(
+          new Set(studies.data.map((row) => row.indication))
+        ).sort((a, b) => a.localeCompare(b)),
+        mapIndications = uniqueIndications.map((value) => ({
+          label: value,
+          value: value,
+        }));
+      setIndications(mapIndications);
+      console.log("uniqueIndications", uniqueIndications);
+      const uniqueStudies = Array.from(
+        new Set(studies.data.map((row) => row.study))
+      ).sort((a, b) => a.localeCompare(b));
+      setStudies(
+        uniqueStudies.map((value) => ({ label: value, value: value }))
+      );
+    },
+    [message, setMessage] = useState(null),
+    updateJsonFile = (file, content) => {
+      console.log("updateJsonFile - file:", file, "content:", content);
+      if (!file || !content) return;
+      let tempContent;
+      // handle inserting table into the right place in keyed object
+      tempContent = JSON.stringify(content);
+      // try to delete the file, in case it is there already, otherwise the PUT will not work
+      fetch(file, {
+        method: "DELETE",
+      })
+        .then((response) => {
+          fetch(file, {
+            method: "PUT",
+            headers: {
+              "Content-type": "application/json; charset=UTF-8",
+            },
+            body: tempContent,
+          })
+            .then((response) => {
+              setMessage(response.ok ? "File saved" : "File not saved");
+              setOpenSnackbar(true);
+              response.text().then((text) => {
+                console.log("text", text);
+              });
+            })
+            .catch((err) => {
+              setMessage(err);
+              setOpenSnackbar(true);
+              console.log("PUT err: ", err);
+            });
+        })
+        .catch((err) => {
+          setMessage(
+            "DELETE was attempted before the new version was saved - but the DELETE failed. (see console)"
+          );
+          setOpenSnackbar(true);
+          console.log("DELETE err: ", err);
+        });
+    };
 
+  useEffect(() => {
+    // console.log("window", window);
+    if (userList === null) return;
+    const matchingUsers = userList.filter(
+      (r) => r.userid === tempUsername && ["prg", "prg+ba"].includes(r.profile)
+    );
+    if (matchingUsers.length > 0) {
+      setShowSaveButton(true);
+      setUserFullName(matchingUsers[0].Name);
+    } else {
+      setShowSaveButton(false);
+      setUserFullName("");
+    }
+    // eslint-disable-next-line
+  }, [tempUsername]);
+
+  useEffect(() => {
+    if (mode === "local") {
+      setUserList(local_user_list);
+      processEmail(local_email);
+      processStudies(local_studies);
+    } else {
+      fetch(usersUrl) // folder_access_request.json
+        .then((response) => response.json())
+        .then((data) => {
+          setUserList(data);
+        });
+      fetch(emailUrl) //email.json
+        .then((response) => response.json())
+        .then((data) => {
+          processEmail(data);
+        });
+      fetch(studiesUrl) // studies_info.json
+        .then((response) => response.json())
+        .then((data) => {
+          processStudies(data);
+        });
+    }
+    // eslint-disable-next-line
+  }, [mode, reprocess]);
+
+  useEffect(() => {
+    if (username === null) {
+      setTempUsername("");
+      setOpenUserLogin(true);
+    } else {
+      setTempUsername(username);
+      setOpenUserLogin(false);
+      setOpenSnackbar(true);
+    }
+  }, [username]);
+
+  return (
+    <>
+      <AppBar position="fixed">
+        <Toolbar
+          variant="dense"
+          sx={{ fontSize: { fontSize }, backgroundColor: "#cccccc" }}
+        >
+          <Box
+            sx={{
+              backgroundColor: "#eeeeee",
+              color: "green",
+              fontWeight: "bold",
+              boxShadow: 3,
+              fontSize: { fontSize },
+            }}
+          >
+            &nbsp;&nbsp;{title}&nbsp;&nbsp;
+          </Box>
+          <Tooltip title="Smaller font">
+            <IconButton
+              sx={{ color: "blue" }}
+              size="small"
+              onClick={() => {
+                setFontSize(fontSize - 3);
+                localStorage.setItem("fontSize", fontSize - 3);
+              }}
+            >
+              <Remove />
+            </IconButton>
+          </Tooltip>
+          <Box sx={{ fontSize: { fontSize }, color: "blue" }}>
+            &nbsp;{fontSize}&nbsp;
+          </Box>
+          <Tooltip title="Larger font">
+            <IconButton
+              sx={{ color: "blue" }}
+              size="small"
+              onClick={() => {
+                setFontSize(fontSize + 3);
+                localStorage.setItem("fontSize", fontSize + 3);
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
+          <Box
+            sx={{ color: "blue", ml: 3 }}
+          >{`${userFullName} (${username})`}</Box>
+          <Box sx={{ flexGrow: 1 }}></Box>
+          <Tooltip title="Information about this screen">
+            <IconButton
+              color="info"
+              // sx={{ mr: 2 }}
+              onClick={() => {
+                setOpenInfo(true);
+              }}
+            >
+              <Info />
+            </IconButton>
+          </Tooltip>
+        </Toolbar>
+      </AppBar>
+      {compounds && (
+        <Autocomplete
+          options={compounds}
+          value={selectedCompounds}
+          onChange={(event, newValue) => {
+            setSelectedCompounds(newValue);
+          }}
+          isOptionEqualToValue={(option, value) => option.value === value.value}
+          multiple
+          sx={{ mt: 7, ml: 3 }}
+          id="tags-compound"
+          disableCloseOnSelect
+          size="small"
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              variant="standard"
+              label="Compounds"
+              placeholder="Select"
+              // InputProps={{ style: { fontSize: { fontSize } } }}
+            />
+          )}
+        />
+      )}
+      {indications && (
+        <Autocomplete
+          options={indications}
+          value={selectedIndications}
+          onChange={(event, newValue) => {
+            setSelectedIndications(newValue);
+          }}
+          isOptionEqualToValue={(option, value) => option.value === value.value}
+          multiple
+          sx={{ mt: 2, ml: 3 }}
+          id="tags-indication"
+          defaultValue={[]}
+          disableCloseOnSelect
+          size="small"
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              variant="standard"
+              label="Indications"
+              placeholder="Select"
+            />
+          )}
+        />
+      )}
+      {studies && (
+        <Autocomplete
+          options={studies}
+          value={selectedStudies}
+          onChange={(event, newValue) => {
+            setSelectedStudies(newValue);
+          }}
+          isOptionEqualToValue={(option, value) => option.value === value.value}
+          multiple
+          sx={{ mt: 2, ml: 3 }}
+          id="tags-study"
+          defaultValue={[]}
+          disableCloseOnSelect
+          size="small"
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              variant="standard"
+              label="Studies"
+              placeholder="Select"
+            />
+          )}
+        />
+      )}
+      <Button
+        sx={{
+          border: 1,
+          ml: 3,
+          mt: 2,
+          bgcolor: "green",
+          color: "white",
+          fontSize: { fontSize },
+        }}
+        size="small"
+        variant="contained"
+        onClick={() => {
+          save();
+        }}
+      >
+        Save
+      </Button>
+      {/* dialog that prompts for a user name */}
+      {!username && (
+        <Dialog
+          fullWidth
+          maxWidth="sm"
+          onClose={() => setOpenUserLogin(false)}
+          open={openUserLogin}
+          title={"User Login"}
+        >
+          <DialogTitle>
+            <Box>
+              {" "}
+              {userFullName && userFullName.length > 0
+                ? `Hi ${userFullName}! Now you are recognized you can press SAVE.`
+                : "Who are you?"}
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            {" "}
+            <TextField
+              id="input-with-icon-textfield"
+              label="User Name"
+              placeholder="e.g. pmason"
+              value={tempUsername}
+              onChange={(e) => {
+                setTempUsername(e.target.value);
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AccountCircle />
+                  </InputAdornment>
+                ),
+              }}
+              variant="standard"
+            />
+          </DialogContent>
+          <DialogActions>
+            {tempUsername &&
+              userList &&
+              tempUsername > "" &&
+              userList.length > 0 && (
+                <Button
+                  sx={{ height: fontSize + 3, border: 1 }}
+                  disabled={!showSaveButton}
+                  onClick={() => saveUser()}
+                >
+                  Save
+                </Button>
+              )}
+          </DialogActions>
+        </Dialog>
+      )}
+      {/* <Box sx={{ width: "100%" }}>
+            {rows && (
+              <DataGridPro
+                autoHeight={true}
+                rows={rows}
+                columns={cols}
+                slots={{ toolbar: GridToolbar }}
+                slotProps={{
+                  toolbar: {
+                    showQuickFilter: true,
+                  },
+                }}
+                // sx={{ "& .MuiDataGrid-row": { fontSize: fontSize } }}
+              />
+            )}{" "}
+          </Box> */}
+      {/* Dialog with General info about this screen */}
+      <Dialog
+        fullWidth
+        maxWidth="xl"
+        onClose={() => setOpenInfo(false)}
+        open={openInfo}
+      >
+        <DialogTitle>Info about this screen</DialogTitle>
+        <DialogContent>
+          <Box sx={{ color: "blue", fontSize: 11 }}>
+            Select what you want to be notified about. Selecting a compound or
+            indications will notify you about all studies related to what you
+            select.
+            <p />A job runs several times a day to check for changes and will
+            then email you if there are any changes.
+            <p /> You can also look at the JSON file where this data is stored{" "}
+            <a href="https://xarprod.ondemand.sas.com/lsaf/webdav/repo/general/biostat/tools/view/index.html?lsaf=/general/biostat/metadata/projects/email.json&meta=/general/biostat/metadata/projects/email_metadata.json">
+              here
+            </a>
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {!message && tempUsername && (
+        <Snackbar
+          severity="success"
+          open={openSnackbar}
+          autoHideDuration={7000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        >
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity="success"
+            sx={{ width: "100%" }}
+          >
+            Welcome 👨‍🦲 {userFullName} ({username})
+          </Alert>
+        </Snackbar>
+      )}
+      {message && (
+        <Snackbar
+          open={openSnackbar}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+          message={message}
+        />
+      )}
+    </>
+  );
+};
 export default App;

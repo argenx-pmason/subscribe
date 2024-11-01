@@ -1,0 +1,52 @@
+[
+  {
+    "type": "compound",
+    "value": "argx-113",
+    "user": "pmason"
+  },
+  {
+    "type": "compound",
+    "value": "argx-117",
+    "user": "pmason"
+  },
+  {
+    "type": "compound",
+    "value": "argx-119",
+    "user": "pmason"
+  },
+  {
+    "type": "compound",
+    "value": "argx-113",
+    "user": "dvankrunckelsven"
+  },
+  {
+    "type": "compound",
+    "value": "argx-117",
+    "user": "dvankrunckelsven"
+  },
+  {
+    "type": "compound",
+    "value": "argx-119",
+    "user": "dvankrunckelsven"
+  },
+  {
+    "type": "indication",
+    "value": "aav",
+    "user": "pmason"
+  },
+  {
+    "type": "indication",
+    "value": "bp",
+    "user": "pmason"
+  },
+  {
+    "type": "indication",
+    "value": "cidp",
+    "user": "pmason"
+  },
+  {
+    "type": "study",
+    "value": "argx-113-2009",
+    "user": "pmason"
+  }
+]
