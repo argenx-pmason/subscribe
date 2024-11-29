@@ -13,7 +13,11 @@ import {
   Toolbar,
   Snackbar,
   IconButton,
+  FormControl,
+  FormControlLabel,
+  FormGroup,
   Alert,
+  Checkbox,
   InputAdornment,
   DialogActions,
 } from "@mui/material";
@@ -59,6 +63,14 @@ const App = () => {
     [tempUsername, setTempUsername] = useState(""),
     [openSnackbar, setOpenSnackbar] = useState(false),
     [reprocess, setReprocess] = useState(false),
+    [blockedStudies, setBlockedStudies] = useState(false),
+    handleBlockedStudies = (event) => {
+      setBlockedStudies(event.target.checked);
+    },
+    [newStudies, setNewStudies] = useState(false),
+    handleNewStudies = (event) => {
+      setNewStudies(event.target.checked);
+    },
     [userFullName, setUserFullName] = useState(
       localStorage.getItem("userFullName")
     ),
@@ -102,6 +114,16 @@ const App = () => {
           user: username,
         });
       });
+      mySubscriptions.push({
+        type: "new",
+        value: newStudies ? "true" : "false",
+        user: username,
+      });
+      mySubscriptions.push({
+        type: "blocked",
+        value: blockedStudies ? "true" : "false",
+        user: username,
+      });
       const updatedSubscriptions = subscriptions.filter(
         (r) => r.user !== username
       );
@@ -119,7 +141,9 @@ const App = () => {
       const myRows = email.filter((row) => row.user === username),
         myCompounds = myRows.filter((row) => row.type === "compound"),
         myIndications = myRows.filter((row) => row.type === "indication"),
-        myStudies = myRows.filter((row) => row.type === "study");
+        myStudies = myRows.filter((row) => row.type === "study"),
+        myNew = myRows.filter((row) => row.type === "new"),
+        myBlocked = myRows.filter((row) => row.type === "blocked");
       setSelectedCompounds(
         myCompounds.map((row) => {
           return { label: row.value, value: row.value };
@@ -135,6 +159,13 @@ const App = () => {
           return { label: row.value, value: row.value };
         })
       );
+      setNewStudies(
+        myNew.length > 0 && myNew[0].value === "true" ? true : false
+      );
+      setBlockedStudies(
+        myBlocked.length > 0 && myBlocked[0].value === "true" ? true : false
+      );
+      console.log("myNew", myNew, "myBlocked", myBlocked);
     },
     processStudies = (studies) => {
       const uniqueCompounds = Array.from(
@@ -270,10 +301,35 @@ const App = () => {
               fontWeight: "bold",
               boxShadow: 3,
               fontSize: { fontSize },
+              mr: 3,
             }}
           >
             &nbsp;&nbsp;{title}&nbsp;&nbsp;
           </Box>
+          {/* <Tooltip title="Notify me about all blackouts">
+            <IconButton
+              sx={{ color: "blue" }}
+              size="small"
+              onClick={() => {
+                setFontSize(fontSize - 3);
+                localStorage.setItem("fontSize", fontSize - 3);
+              }}
+            >
+              <Contrast />
+            </IconButton>
+          </Tooltip> */}
+          {/* <Tooltip title="Notify me about all new studies">
+            <IconButton
+              sx={{ color: "blue" }}
+              size="small"
+              onClick={() => {
+                setFontSize(fontSize - 3);
+                localStorage.setItem("fontSize", fontSize - 3);
+              }}
+            >
+              <FiberNew />
+            </IconButton>
+          </Tooltip> */}
           <Tooltip title="Smaller font">
             <IconButton
               sx={{ color: "blue" }}
@@ -291,7 +347,7 @@ const App = () => {
           </Box>
           <Tooltip title="Larger font">
             <IconButton
-              sx={{ color: "blue" }}
+              sx={{ color: "blue", mr: 3 }}
               size="small"
               onClick={() => {
                 setFontSize(fontSize + 3);
@@ -301,6 +357,37 @@ const App = () => {
               <Add />
             </IconButton>
           </Tooltip>
+          <FormControl component="fieldset" variant="standard" size="small">
+            <FormGroup row>
+              <Tooltip title="Notify me about all new studies">
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      sx={{ color: "green" }}
+                      checked={newStudies}
+                      onChange={handleNewStudies}
+                    />
+                  }
+                  sx={{ color: "green" }}
+                  label="New studies"
+                />
+              </Tooltip>
+              <Tooltip title="Notify me about all blocked out studies">
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      sx={{ color: "yellow" }}
+                      checked={blockedStudies}
+                      onChange={handleBlockedStudies}
+                    />
+                  }
+                  sx={{ color: "yellow" }}
+                  label="Blocked studies"
+                />
+              </Tooltip>
+            </FormGroup>
+          </FormControl>
+
           <Box
             sx={{ color: "blue", ml: 3 }}
           >{`${userFullName} (${username})`}</Box>
@@ -492,7 +579,11 @@ const App = () => {
             <p />A job runs several times a day to check for changes and will
             then email you if there are any changes.
             <p /> You can also look at the JSON file where this data is stored{" "}
-            <a href="https://xarprod.ondemand.sas.com/lsaf/webdav/repo/general/biostat/tools/view/index.html?lsaf=/general/biostat/metadata/projects/email.json&meta=/general/biostat/metadata/projects/email_metadata.json">
+            <a
+              href="https://xarprod.ondemand.sas.com/lsaf/webdav/repo/general/biostat/tools/view/index.html?lsaf=/general/biostat/metadata/projects/email.json&meta=/general/biostat/metadata/projects/email_metadata.json"
+              target="_blank"
+              rel="noreferrer"
+            >
               here
             </a>
           </Box>

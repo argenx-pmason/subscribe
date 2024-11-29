@@ -48,5 +48,7 @@
     "type": "study",
     "value": "argx-113-2009",
     "user": "pmason"
-  }
+  },
+  { "type": "new", "value": "true", "user": "pmason" },
+  { "type": "blocked", "value": "false", "user": "pmason" }
 ]
