@@ -39,11 +39,11 @@ const App = () => {
     mode = href.startsWith("http://localhost") ? "local" : "remote",
     // server = href.split("//")[1].split("/")[0],
     webDavPrefix = urlPrefix + "/lsaf/webdav/repo",
-    // fileViewerPrefix = `https://${server}/lsaf/filedownload/sdd:/general/biostat/tools/fileviewer/index.html?file=`,
+    // fileViewerPrefix = `https://${server}/lsaf/filedownload/sdd:/general/biostat/apps/fileviewer/index.html?file=`,
     usersUrl =
       webDavPrefix +
       "/general/biostat/metadata/projects/folder_access_request.json",
-    emailUrl = webDavPrefix + "/general/biostat/metadata/projects/email.json",
+    emailUrl = webDavPrefix + "/general/biostat/apps/subscribe/email.json",
     studiesUrl =
       webDavPrefix + "/general/biostat/metadata/projects/studies_info.json",
     [openInfo, setOpenInfo] = useState(false),
@@ -66,6 +66,10 @@ const App = () => {
     [blockedStudies, setBlockedStudies] = useState(false),
     handleBlockedStudies = (event) => {
       setBlockedStudies(event.target.checked);
+    },
+    [gsdtmChecked, setGsdtmChecked] = useState(false),
+    handleGsdtmChecked = (event) => {
+      setGsdtmChecked(event.target.checked);
     },
     [newStudies, setNewStudies] = useState(false),
     handleNewStudies = (event) => {
@@ -124,6 +128,11 @@ const App = () => {
         value: blockedStudies ? "true" : "false",
         user: username,
       });
+      mySubscriptions.push({
+        type: "gsdtm",
+        value: gsdtmChecked ? "true" : "false",
+        user: username,
+      });
       const updatedSubscriptions = subscriptions.filter(
         (r) => r.user !== username
       );
@@ -143,7 +152,8 @@ const App = () => {
         myIndications = myRows.filter((row) => row.type === "indication"),
         myStudies = myRows.filter((row) => row.type === "study"),
         myNew = myRows.filter((row) => row.type === "new"),
-        myBlocked = myRows.filter((row) => row.type === "blocked");
+        myBlocked = myRows.filter((row) => row.type === "blocked"),
+        myGsdtm = myRows.filter((row) => row.type === "gsdtm");
       setSelectedCompounds(
         myCompounds.map((row) => {
           return { label: row.value, value: row.value };
@@ -164,6 +174,9 @@ const App = () => {
       );
       setBlockedStudies(
         myBlocked.length > 0 && myBlocked[0].value === "true" ? true : false
+      );
+      setGsdtmChecked(
+        myGsdtm.length > 0 && myGsdtm[0].value === "true" ? true : false
       );
       console.log("myNew", myNew, "myBlocked", myBlocked);
     },
@@ -239,7 +252,9 @@ const App = () => {
     // console.log("window", window);
     if (userList === null) return;
     const matchingUsers = userList.filter(
-      (r) => r.userid === tempUsername && ["prg", "prg+ba"].includes(r.profile)
+      (r) =>
+        r.userid === tempUsername &&
+        ["prg", "prg+ba", "dm", "dm+ba"].includes(r.profile)
     );
     if (matchingUsers.length > 0) {
       setShowSaveButton(true);
@@ -332,7 +347,7 @@ const App = () => {
           </Tooltip> */}
           <Tooltip title="Smaller font">
             <IconButton
-              sx={{ color: "blue" }}
+              sx={{ color: "black", fontWeight: "bold" }}
               size="small"
               onClick={() => {
                 setFontSize(fontSize - 3);
@@ -342,12 +357,12 @@ const App = () => {
               <Remove />
             </IconButton>
           </Tooltip>
-          <Box sx={{ fontSize: { fontSize }, color: "blue" }}>
+          <Box sx={{ fontSize: { fontSize }, color: "black" }}>
             &nbsp;{fontSize}&nbsp;
           </Box>
           <Tooltip title="Larger font">
             <IconButton
-              sx={{ color: "blue", mr: 3 }}
+              sx={{ color: "black", fontWeight: "bold", mr: 3 }}
               size="small"
               onClick={() => {
                 setFontSize(fontSize + 3);
@@ -376,20 +391,33 @@ const App = () => {
                 <FormControlLabel
                   control={
                     <Checkbox
-                      sx={{ color: "yellow" }}
+                      sx={{ color: "red" }}
                       checked={blockedStudies}
                       onChange={handleBlockedStudies}
                     />
                   }
-                  sx={{ color: "yellow" }}
+                  sx={{ color: "red" }}
                   label="Blocked studies"
+                />
+              </Tooltip>
+              <Tooltip title="Include notifications about gSDTM studies (usually only Data Managers need this)">
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      sx={{ color: "blue" }}
+                      checked={gsdtmChecked}
+                      onChange={handleGsdtmChecked}
+                    />
+                  }
+                  sx={{ color: "blue" }}
+                  label="gSDTM notifications"
                 />
               </Tooltip>
             </FormGroup>
           </FormControl>
 
           <Box
-            sx={{ color: "blue", ml: 3 }}
+            sx={{ color: "black", fontWeight: "bold", ml: 3 }}
           >{`${userFullName} (${username})`}</Box>
           <Box sx={{ flexGrow: 1 }}></Box>
           <Tooltip title="Information about this screen">
@@ -405,6 +433,12 @@ const App = () => {
           </Tooltip>
         </Toolbar>
       </AppBar>
+      <Box sx={{ mt: 7, ml: 3, fontSize: fontSize - 3 }}>
+        Choosing a compound includes all indications and studies related to that
+        compound. Choosing an indication includes all compounds and studies
+        related to that indication.
+      </Box>
+      <hr />
       {compounds && (
         <Autocomplete
           options={compounds}
@@ -414,7 +448,7 @@ const App = () => {
           }}
           isOptionEqualToValue={(option, value) => option.value === value.value}
           multiple
-          sx={{ mt: 7, ml: 3 }}
+          sx={{ mt: 2, ml: 3 }}
           id="tags-compound"
           disableCloseOnSelect
           size="small"
@@ -576,16 +610,29 @@ const App = () => {
             Select what you want to be notified about. Selecting a compound or
             indications will notify you about all studies related to what you
             select.
-            <p />A job runs several times a day to check for changes and will
-            then email you if there are any changes.
+            <p />A job runs every 2 hours each day between 7:15am and 9:15pm and
+            will then email you if there are any changes. The job that checks
+            for zips is located here:
+            <b>/general/biostat/jobs/utils/dev/jobs/news.job</b>
             <p /> You can also look at the JSON file where this data is stored{" "}
             <a
-              href="https://xarprod.ondemand.sas.com/lsaf/webdav/repo/general/biostat/tools/view/index.html?lsaf=/general/biostat/metadata/projects/email.json&meta=/general/biostat/metadata/projects/email_metadata.json"
+              href="https://xarprod.ondemand.sas.com/lsaf/webdav/repo/general/biostat/apps/view/index.html?lsaf=/general/biostat/apps/subscribe/email.json&meta=/general/biostat/apps/subscribe/email_metadata.json"
               target="_blank"
               rel="noreferrer"
             >
-              here
+              here ⛳
             </a>
+            <p />
+            We check for the following things:{" "}
+            <ul>
+              <li>New studies</li>
+              <li>Blocked studies</li>
+              <li>Changes in study status</li>
+              <li>
+                New zip files, but by default you don't get emails for new zips
+                in gSDTM studies
+              </li>
+            </ul>{" "}
           </Box>
         </DialogContent>
       </Dialog>
