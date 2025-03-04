@@ -75,6 +75,22 @@ const App = () => {
     handleNewStudies = (event) => {
       setNewStudies(event.target.checked);
     },
+    [contractRenewal1, setContractRenewal1] = useState(false),
+    handleChangeCR1 = (event) => {
+      setContractRenewal1(event.target.checked);
+    },
+    [contractRenewal7, setContractRenewal7] = useState(false),
+    handleChangeCR7 = (event) => {
+      setContractRenewal7(event.target.checked);
+    },
+    [contractRenewal30, setContractRenewal30] = useState(false),
+    handleChangeCR30 = (event) => {
+      setContractRenewal30(event.target.checked);
+    },
+    [contractRenewal60, setContractRenewal60] = useState(false),
+    handleChangeCR60 = (event) => {
+      setContractRenewal60(event.target.checked);
+    },
     [userFullName, setUserFullName] = useState(
       localStorage.getItem("userFullName")
     ),
@@ -119,6 +135,26 @@ const App = () => {
         });
       });
       mySubscriptions.push({
+        type: "contractRenewal1",
+        value: contractRenewal1 ? "true" : "false",
+        user: username,
+      });
+      mySubscriptions.push({
+        type: "contractRenewal7",
+        value: contractRenewal7 ? "true" : "false",
+        user: username,
+      });
+      mySubscriptions.push({
+        type: "contractRenewal30",
+        value: contractRenewal30 ? "true" : "false",
+        user: username,
+      });
+      mySubscriptions.push({
+        type: "contractRenewal60",
+        value: contractRenewal60 ? "true" : "false",
+        user: username,
+      });
+      mySubscriptions.push({
         type: "new",
         value: newStudies ? "true" : "false",
         user: username,
@@ -151,6 +187,10 @@ const App = () => {
         myCompounds = myRows.filter((row) => row.type === "compound"),
         myIndications = myRows.filter((row) => row.type === "indication"),
         myStudies = myRows.filter((row) => row.type === "study"),
+        myC1 = myRows.filter((row) => row.type === "contractRenewal1"),
+        myC7 = myRows.filter((row) => row.type === "contractRenewal7"),
+        myC30 = myRows.filter((row) => row.type === "contractRenewal30"),
+        myC60 = myRows.filter((row) => row.type === "contractRenewal60"),
         myNew = myRows.filter((row) => row.type === "new"),
         myBlocked = myRows.filter((row) => row.type === "blocked"),
         myGsdtm = myRows.filter((row) => row.type === "gsdtm");
@@ -169,16 +209,27 @@ const App = () => {
           return { label: row.value, value: row.value };
         })
       );
-      setNewStudies(
-        myNew.length > 0 && myNew[0].value === "true" ? true : false
-      );
+      setContractRenewal1(!!(myC1.length > 0 && myC1[0].value === "true"));
+      setContractRenewal7(!!(myC7.length > 0 && myC7[0].value === "true"));
+      setContractRenewal30(!!(myC30.length > 0 && myC30[0].value === "true"));
+      setContractRenewal60(!!(myC60.length > 0 && myC60[0].value === "true"));
+      setNewStudies(!!(myNew.length > 0 && myNew[0].value === "true"));
       setBlockedStudies(
-        myBlocked.length > 0 && myBlocked[0].value === "true" ? true : false
+        !!(myBlocked.length > 0 && myBlocked[0].value === "true")
       );
-      setGsdtmChecked(
-        myGsdtm.length > 0 && myGsdtm[0].value === "true" ? true : false
+      setGsdtmChecked(!!(myGsdtm.length > 0 && myGsdtm[0].value === "true"));
+      console.log(
+        "myC30",
+        myC30,
+        "myC60",
+        myC60,
+        "myNew",
+        myNew,
+        "myBlocked",
+        myBlocked,
+        "myGsdtm",
+        myGsdtm
       );
-      console.log("myNew", myNew, "myBlocked", myBlocked);
     },
     processStudies = (studies) => {
       const uniqueCompounds = Array.from(
@@ -372,50 +423,6 @@ const App = () => {
               <Add />
             </IconButton>
           </Tooltip>
-          <FormControl component="fieldset" variant="standard" size="small">
-            <FormGroup row>
-              <Tooltip title="Notify me about all new studies">
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      sx={{ color: "green" }}
-                      checked={newStudies}
-                      onChange={handleNewStudies}
-                    />
-                  }
-                  sx={{ color: "green" }}
-                  label="New studies"
-                />
-              </Tooltip>
-              <Tooltip title="Notify me about all blocked out studies">
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      sx={{ color: "red" }}
-                      checked={blockedStudies}
-                      onChange={handleBlockedStudies}
-                    />
-                  }
-                  sx={{ color: "red" }}
-                  label="Blocked studies"
-                />
-              </Tooltip>
-              <Tooltip title="Include notifications about gSDTM studies (usually only Data Managers need this)">
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      sx={{ color: "blue" }}
-                      checked={gsdtmChecked}
-                      onChange={handleGsdtmChecked}
-                    />
-                  }
-                  sx={{ color: "blue" }}
-                  label="gSDTM notifications"
-                />
-              </Tooltip>
-            </FormGroup>
-          </FormControl>
-
           <Box
             sx={{ color: "black", fontWeight: "bold", ml: 3 }}
           >{`${userFullName} (${username})`}</Box>
@@ -511,6 +518,114 @@ const App = () => {
           )}
         />
       )}
+      <br />
+      <FormControl component="fieldset" variant="standard" size="small">
+        <FormGroup row>
+          <Box sx={{ fontWeight: "bold", mt: 1, mr: 1, color: "gray" }}>
+            Select things you want notifications about:
+          </Box>
+          <Tooltip title="Notify me about all new studies">
+            <FormControlLabel
+              control={
+                <Checkbox
+                  sx={{ color: "green" }}
+                  checked={newStudies}
+                  onChange={handleNewStudies}
+                />
+              }
+              sx={{ color: "green" }}
+              label="New studies"
+            />
+          </Tooltip>
+          <Tooltip title="Notify me about all blocked out studies">
+            <FormControlLabel
+              control={
+                <Checkbox
+                  sx={{ color: "red" }}
+                  checked={blockedStudies}
+                  onChange={handleBlockedStudies}
+                />
+              }
+              sx={{ color: "red" }}
+              label="Blocked studies"
+            />
+          </Tooltip>
+          <Tooltip title="Include notifications about gSDTM studies (usually only Data Managers need this)">
+            <FormControlLabel
+              control={
+                <Checkbox
+                  sx={{ color: "blue" }}
+                  checked={gsdtmChecked}
+                  onChange={handleGsdtmChecked}
+                />
+              }
+              sx={{ color: "blue" }}
+              label="gSDTM notifications"
+            />
+          </Tooltip>
+        </FormGroup>
+      </FormControl>
+      <br />
+      <FormControl component="fieldset" variant="standard" size="small">
+        <FormGroup row>
+          <Box sx={{ fontWeight: "lighter", mt: 1, mr: 1, color: "gray" }}>
+            Contract renewal notifications (for managers):
+          </Box>
+          <Tooltip title="Notify me when there is only 1 day till contract renewal">
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={contractRenewal1}
+                  onChange={handleChangeCR1}
+                  label="1 day"
+                />
+              }
+              sx={{ color: "red", fontWeight: "lighter" }}
+              label="1 day"
+            />
+          </Tooltip>
+          <Tooltip title="Notify me when there is only 1 week till contract renewal">
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={contractRenewal7}
+                  onChange={handleChangeCR7}
+                  label="7 days"
+                />
+              }
+              sx={{ color: "orange", fontWeight: "lighter" }}
+              label="7 days"
+            />
+          </Tooltip>
+          <Tooltip title="Notify me when there are 30 days till contract renewal">
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={contractRenewal30}
+                  onChange={handleChangeCR30}
+                  label="30 days"
+                />
+              }
+              sx={{ color: "blue", fontWeight: "lighter" }}
+              label="30 days"
+            />
+          </Tooltip>
+          <Tooltip title="Notify me when there are 60 days till contract renewal">
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={contractRenewal60}
+                  onChange={handleChangeCR60}
+                  label="60 days"
+                />
+              }
+              sx={{ color: "green", fontWeight: "lighter" }}
+              label="60 days"
+            />
+          </Tooltip>
+        </FormGroup>
+      </FormControl>
+      <br />
       <Button
         sx={{
           border: 1,
