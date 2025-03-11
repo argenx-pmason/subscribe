@@ -53,6 +53,7 @@ const App = () => {
     [compounds, setCompounds] = useState(null),
     [indications, setIndications] = useState(null),
     [studies, setStudies] = useState(null),
+    [managers, setManagers] = useState([]),
     [selectedCompounds, setSelectedCompounds] = useState([]),
     [selectedIndications, setSelectedIndications] = useState([]),
     [selectedStudies, setSelectedStudies] = useState([]),
@@ -300,13 +301,17 @@ const App = () => {
     };
 
   useEffect(() => {
-    // console.log("window", window);
     if (userList === null) return;
     const matchingUsers = userList.filter(
-      (r) =>
-        r.userid === tempUsername &&
-        ["prg", "prg+ba", "dm", "dm+ba"].includes(r.profile)
-    );
+        (r) =>
+          r.userid === tempUsername &&
+          ["prg", "prg+ba", "dm", "dm+ba"].includes(r.profile)
+      ),
+      _managers = userList
+        .filter((r) => r.profile.includes("+ba"))
+        .map((r) => r.userid);
+    console.log(username, "userList", userList, "_managers", _managers);
+    setManagers(_managers);
     if (matchingUsers.length > 0) {
       setShowSaveButton(true);
       setUserFullName(matchingUsers[0].Name);
@@ -566,65 +571,67 @@ const App = () => {
         </FormGroup>
       </FormControl>
       <br />
-      <FormControl component="fieldset" variant="standard" size="small">
-        <FormGroup row>
-          <Box sx={{ fontWeight: "lighter", mt: 1, mr: 1, color: "gray" }}>
-            Contract renewal notifications (for managers):
-          </Box>
-          <Tooltip title="Notify me when there is only 1 day till contract renewal">
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={contractRenewal1}
-                  onChange={handleChangeCR1}
-                  label="1 day"
-                />
-              }
-              sx={{ color: "red", fontWeight: "lighter" }}
-              label="1 day"
-            />
-          </Tooltip>
-          <Tooltip title="Notify me when there is only 1 week till contract renewal">
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={contractRenewal7}
-                  onChange={handleChangeCR7}
-                  label="7 days"
-                />
-              }
-              sx={{ color: "orange", fontWeight: "lighter" }}
-              label="7 days"
-            />
-          </Tooltip>
-          <Tooltip title="Notify me when there are 30 days till contract renewal">
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={contractRenewal30}
-                  onChange={handleChangeCR30}
-                  label="30 days"
-                />
-              }
-              sx={{ color: "blue", fontWeight: "lighter" }}
-              label="30 days"
-            />
-          </Tooltip>
-          <Tooltip title="Notify me when there are 60 days till contract renewal">
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={contractRenewal60}
-                  onChange={handleChangeCR60}
-                  label="60 days"
-                />
-              }
-              sx={{ color: "green", fontWeight: "lighter" }}
-              label="60 days"
-            />
-          </Tooltip>
-        </FormGroup>
-      </FormControl>
+      {managers.includes(username) ? (
+        <FormControl component="fieldset" variant="standard" size="small">
+          <FormGroup row>
+            <Box sx={{ fontWeight: "lighter", mt: 1, mr: 1, color: "gray" }}>
+              Contract renewal notifications (for managers):
+            </Box>
+            <Tooltip title="Notify me when there is only 1 day till contract renewal">
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={contractRenewal1}
+                    onChange={handleChangeCR1}
+                    label="1 day"
+                  />
+                }
+                sx={{ color: "red", fontWeight: "lighter" }}
+                label="1 day"
+              />
+            </Tooltip>
+            <Tooltip title="Notify me when there is only 1 week till contract renewal">
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={contractRenewal7}
+                    onChange={handleChangeCR7}
+                    label="7 days"
+                  />
+                }
+                sx={{ color: "orange", fontWeight: "lighter" }}
+                label="7 days"
+              />
+            </Tooltip>
+            <Tooltip title="Notify me when there are 30 days till contract renewal">
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={contractRenewal30}
+                    onChange={handleChangeCR30}
+                    label="30 days"
+                  />
+                }
+                sx={{ color: "blue", fontWeight: "lighter" }}
+                label="30 days"
+              />
+            </Tooltip>
+            <Tooltip title="Notify me when there are 60 days till contract renewal">
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={contractRenewal60}
+                    onChange={handleChangeCR60}
+                    label="60 days"
+                  />
+                }
+                sx={{ color: "green", fontWeight: "lighter" }}
+                label="60 days"
+              />
+            </Tooltip>
+          </FormGroup>
+        </FormControl>
+      ) : null}
       <br />
       <Button
         sx={{
